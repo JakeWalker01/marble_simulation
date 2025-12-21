@@ -18,10 +18,6 @@ prev = obj.scale.x
 scene.frame_set(start + 1)
 current = obj.scale.x
 
-def threshold():
-    if 
-
-    
 for frame in range(start + 1, end):
 
     scene.frame_set(frame - 1)
