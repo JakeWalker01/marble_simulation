@@ -1,5 +1,17 @@
 import bpy
 
+#initial setup
+start_velocity = (0.0, 0.0, 0.0)
+start_location = (0, 0, 10)
+gravity = 9.81
+fps = 24
+duration = 5.0
+
+for obj_name in ["Marble", "Trajectory_Path"]:
+    if obj_name in bpy.data.objects:
+        obj = bpy.data.objects[obj_name]
+        bpy.data.objects.remove(obj, do_unlink=True)
+
 if "Marble" in bpy.data.objects:
     bpy.data.objects.remove(bpy.data.objects["Marble"], do_unlink=True)
     
@@ -20,4 +32,33 @@ if "Marble" in bpy.data.objects:
 
 print("Created marble successfully")
 
-print("Simulating physics path")
+print("Calculating path...")
+
+path_point = []
+
+x, y, z = start_location
+vx, vy, vz = start_velocity
+dt = 1.0/fps
+
+for frame in range(int(fps * duration)):
+    path_point.append((x, y, z, 1.0))
+    
+    x += vx * dt
+    y += vy * dt
+    z += vz * dt
+
+    vz -= gravity * dt
+
+curve_data = bpy.data.curves.new("Trajectory_data", type="CURVE")
+curve_data.dimensions = "3D"
+
+polyline = curve_data.splines.new('POLY')
+polyline.points.add(len(path_point) - 1) 
+
+for i, coord in enumerate(path_point):
+    polyline.points[i].co = coord
+
+curve_obj = bpy.data.objects.new('Trajectory_Path', curve_data)
+bpy.context.collection.objects.link(curve_obj)
+
+print("Trajectory line created!")
