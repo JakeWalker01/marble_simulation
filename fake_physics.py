@@ -10,7 +10,7 @@ BOUNCINESS = 0.8 # how much energy is conserved after a bounce
 RADIUS = 0.25 # radius of marble
 DT = 1/FPS  # 24 fps = 0.04166 (each frame is 0.04166 s)
             # DT because blender works in frames and physics works with time, we need to turn frames to time (s)
-current_pos = [0.0, 0.0, 10.0]  # position of marble
+current_pos = [0.0, 0.0, 10.0] # position of marble
 velocity = [0.0, 0.0, 0.0] # velocity of marble
 
 scene = bpy.context.scene 
@@ -50,6 +50,24 @@ def object_detection(position, velocity):
     else:
         return None
 
+def create_path_curve(points_list):
+    
+    curve_data = bpy.data.curves.new('PhysicsPath', type='CURVE')
+    curve_data.dimensions = '3D'
+    curve_data.resolution_u = 2 
+    
+    spline = curve_data.splines.new('BEZIER')
+    spline.bezier_points.add(len(points_list) - 1) 
+    
+    for i, point in enumerate(points_list):
+        b_point = spline.bezier_points[i]
+        b_point.co = point 
+        b_point.handle_left_type = 'VECTOR'  
+        b_point.handle_right_type = 'VECTOR'
+        
+    curve_obj = bpy.data.objects.new('Ball_Path', curve_data)
+    bpy.context.collection.objects.link(curve_obj)
+
 # distance (current_z) = velocity * time
 # acceleration (gravity) = velocity / time
 
@@ -74,8 +92,6 @@ for frame_number in range(TOTAL_FRAMES): # Eulers method - loops frame by frame 
 
     print(current_pos[2])
 
-
-"fix ball collision glitch"
 
 
 
