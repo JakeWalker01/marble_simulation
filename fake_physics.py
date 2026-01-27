@@ -32,65 +32,46 @@ def object_detection(position, velocity):
     pos_vec = mathutils.Vector(position) 
     vel_vec = mathutils.Vector(velocity)
     
-    if vel_vec.length > 0: # will run if ball is moving
+    if vel_vec.length > 0: # will run if ball is moving (if not normaliszed will do a 0/0 calc)
         offset = vel_vec.normalized() * (RADIUS + 0.01) # gives us the direction of the raycast and offsets it outside the radius 
         pos_vec = pos_vec + offset # adds it to the position to avoid self-collision
     
-    ray_length = (vel_vec.length * DT) * 1.05  # makes the raycast same length that frame (with tolerance (* 1.05) as vector length)
-    
-    if ray_length < 0.01:  # if the ball is moving slowly or stationary auto set it to 0.01
-        ray_length = 0.01
+    ray_length = (vel_vec.length * DT) * 1.05   # (speed * time = distance)  
+                                                # makes the raycast same length that frame (with tolerance (* 1.05) as vector length)
+    if ray_length < 0.01: # if the ball is moving slowly or stationary auto set it to 0.01  
+        ray_length = 0.01 # makes sure it will definitely collide
 
     hit, location, normal, index, object, matrix = scene.ray_cast(depsgraph, pos_vec, vel_vec, distance=ray_length) # # unpacks ray_cast
 
     if hit:
-        if object.name == "Marble":  # back up incase it calculates ray_length incorrect and still thinks its inside the marble
-            return None
         return [normal.x, normal.y, normal.z]
     else:
         return None
-
-def create_path_curve(points_list):
-    
-    curve_data = bpy.data.curves.new('PhysicsPath', type='CURVE')
-    curve_data.dimensions = '3D'
-    curve_data.resolution_u = 2 
-    
-    spline = curve_data.splines.new('BEZIER')
-    spline.bezier_points.add(len(points_list) - 1) 
-    
-    for i, point in enumerate(points_list):
-        b_point = spline.bezier_points[i]
-        b_point.co = point 
-        b_point.handle_left_type = 'VECTOR'  
-        b_point.handle_right_type = 'VECTOR'
-        
-    curve_obj = bpy.data.objects.new('Ball_Path', curve_data)
-    bpy.context.collection.objects.link(curve_obj)
 
 # distance (current_z) = velocity * time
 # acceleration (gravity) = velocity / time
 
 for frame_number in range(TOTAL_FRAMES): # Eulers method - loops frame by frame updating position
     
-    velocity[2] -= GRAVITY * DT # changes Z postion due to gravity
+    velocity[2] -= GRAVITY * DT # changes Z velocity due to gravity
     wall_normal = object_detection(current_pos, velocity) # the normal of the wall
 
     if wall_normal:
         vel_vec = mathutils.Vector(velocity) # vectorising
-        norm_vec = mathutils.Vector(wall_normal)
-        reflect_vec = vel_vec.reflect(norm_vec)
-        reflect_vec = reflect_vec * BOUNCINESS
-        velocity = [reflect_vec.x, reflect_vec.y, reflect_vec.z]
+        norm_vec = mathutils.Vector(wall_normal) # vectorising 
+        reflect_vel = vel_vec.reflect(norm_vec)
+        reflect_vel = reflect_vel * BOUNCINESS
+        velocity = [reflect_vel.x, reflect_vel.y, reflect_vel.z]
 
-    current_pos[0] += velocity[0] * DT
+    current_pos[0] += velocity[0] * DT  
     current_pos[1] += velocity[1] * DT
     current_pos[2] += velocity[2] * DT
         
     obj.location = (current_pos[0], current_pos[1], current_pos[2])
     obj.keyframe_insert(data_path="location", frame=frame_number)
 
-    print(current_pos[2])
+    if 30 < frame_number < 60:
+        print(f"frame: {frame_number} Velocity: {velocity} Position: {current_pos}")
 
 
 
